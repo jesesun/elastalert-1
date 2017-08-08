@@ -1,0 +1,64 @@
+# Alert when there is a succesful attack  
+  
+# Index to search, wildcard supported  
+index: bitsensor  
+timestamp_field: endpoint.localtime  
+  
+# Rule name, must be unique  
+name: Summary report 
+  
+# Type of alert.  
+type: any  
+realert:   
+  seconds: 0  
+# Do check rule every one minute.  
+aggregation:  
+  schedule: '*/1 * * * *'  
+  
+# To send separate notification for each combination of ip and useragent
+#aggregation_key:   
+#- context.ip  
+#- context.http.userAgent  
+
+include:
+  - context.ip
+  - context.http.userAgent
+  - errors
+  - detections
+
+summary_table_fields:  
+  - context.ip  
+  - context.http.userAgent  
+  - detections_parsed.type  
+  
+  
+# A list of elasticsearch filters used for find events  
+# These filters are joined with AND and nested in a filtered query  
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html  
+filter:   
+- query:  
+    query_string:  
+      query: "_exists_:detections"  
+      
+# Enhancement for converting 'detections' array into object, ex. get merged detection type by 
+# 'detections_parsed.type' or get first detection type by 'detection_parsed.0.type'
+match_enhancements:  
+- "elastalert_modules.bitsensor_enhancement.AlertTextEnhancement"  
+run_enhancements_first: true
+
+# Set link to kibana on alert subject
+use_kibana4_dashboard: https://localhost/app/kibana#/dashboard/Application
+
+alert_subject: ":memo: Summary report <{}|Link to dashboard>"
+alert_subject_args:
+  - kibana_link
+
+alert_text_type: alert_text_only  
+alert_text: ""
+
+
+# The alert is use when a match is found  
+alert:  
+  - "elastalert_modules.bitsensor_alert.BitSensorSlackAlerter"  
+slack_webhook_url: "https://hooks.slack.com/services/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"  
+slack_username_override: "ElastAlert"
